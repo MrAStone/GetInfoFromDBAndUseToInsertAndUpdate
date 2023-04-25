@@ -1,4 +1,5 @@
-﻿Imports MySql.Data.MySqlClient
+﻿Imports System.Runtime.Remoting.Contexts
+Imports MySql.Data.MySqlClient
 Imports Mysqlx.XDevAPI.Relational
 
 Module Module1
@@ -20,11 +21,58 @@ Module Module1
                 Case 2
                     insertData(con, tables, tableChoice)
                 Case 3
-
+                    updateData(con, tables, tableChoice)
             End Select
 
 
         Loop
+    End Sub
+    Sub updateData(con As MySqlConnection, tables As List(Of String), menuChoice As Integer)
+        con.Open()
+        Dim reader As MySqlDataReader
+        Dim cmd As New MySqlCommand
+        Dim SQL As String = "SELECT * FROM " & tables(menuChoice - 1)
+        cmd.CommandText = SQL
+        cmd.Connection = con
+        reader = cmd.ExecuteReader
+        Dim lopk As New List(Of String)
+        While reader.Read
+
+            lopk.Add(reader.GetString(0))
+            Console.Write(lopk.Count & ": ")
+            For i = 0 To reader.FieldCount - 1
+                Console.Write(reader.GetString(i) & " ")
+            Next
+            Console.WriteLine()
+        End While
+        con.Close()
+        Console.Write("Which record do you want to update: ")
+        Dim recChoice As Integer = Console.ReadLine()
+        Dim PK = lopk(recChoice - 1)
+        con.Open()
+        reader = getFieldNames(con, tables, menuChoice)
+        Dim fields As New List(Of String)
+        While reader.Read()
+            fields.Add(reader.GetString(0))
+            Console.WriteLine(fields.Count & ":" & reader.GetString(0))
+        End While
+
+        con.Close()
+        Console.Write("Which filed do you want to update: ")
+        Dim fieldChoice As Integer = Console.ReadLine
+        Console.Write("What is the new value: ")
+        Dim newVal = Console.ReadLine
+        Dim field = fields(fieldChoice - 1)
+        SQL = "UPDATE " & tables(menuChoice - 1) & " SET " & field & "=@value WHERE " & fields(0) & "=@val"
+        con.Open()
+        cmd.Connection = con
+        cmd.CommandText = SQL
+        cmd.Parameters.AddWithValue("@value", newVal)
+        cmd.Parameters.AddWithValue("@val", PK)
+        Console.WriteLine(SQL)
+        cmd.ExecuteNonQuery()
+        con.Close()
+
     End Sub
     Sub viewData(con As MySqlConnection, tables As List(Of String), menuChoice As Integer)
         con.Open()
@@ -36,15 +84,27 @@ Module Module1
         End While
 
         con.Close()
-        Console.Write("Which filed do you want to set criteria for: ")
+        Console.Write("Which field do you want to set criteria for choose 0 for all data: ")
         Dim fieldChoice As Integer = Console.ReadLine
-        Dim fieldCriteria As String = fields(fieldChoice - 1)
-        Console.Write("What comparison do you want (<,>,<=,>=,=,<>): ")
-        fieldCriteria &= Console.ReadLine
-        Console.Write("What value do you want to filter by: ")
-        Dim criteria As String = Console.ReadLine
+        Dim fieldCriteria As String
+        Dim criteria As String
+        If fieldChoice <> 0 Then
+
+            fieldCriteria = fields(fieldChoice - 1)
+            Console.Write("What comparison do you want (<,>,<=,>=,=,<>): ")
+            fieldCriteria &= Console.ReadLine
+            Console.Write("What value do you want to filter by: ")
+            criteria = Console.ReadLine
+        End If
+
         Dim cmd As New MySqlCommand
-        Dim SQL As String = "SELECT * FROM " & tables(menuChoice - 1) & " WHERE " & fieldCriteria & "@param;"
+        Dim SQL As String
+        If fieldChoice = 0 Then
+            SQL = "SELECT * FROM " & tables(menuChoice - 1)
+        Else
+            SQL = "SELECT * FROM " & tables(menuChoice - 1) & " WHERE " & fieldCriteria & "@param;"
+        End If
+
         Console.WriteLine(SQL)
         con.Open()
         cmd.Connection = con
@@ -55,7 +115,10 @@ Module Module1
 
         reader = cmd.ExecuteReader
         While reader.Read
-            Console.WriteLine(reader.GetString(0) & " = " & reader.GetString("NoOfLicences"))
+            For i = 0 To reader.FieldCount - 1
+                Console.Write(reader.GetString(i) & " ")
+            Next
+            Console.WriteLine()
         End While
         con.Close()
     End Sub
