@@ -78,8 +78,10 @@ Module Module1
         con.Open()
         Dim reader = getFieldNames(con, tables, menuChoice)
         Dim fields As New List(Of String)
+        Dim DataTypes As New List(Of String)
         While reader.Read()
             fields.Add(reader.GetString(0))
+            DataTypes.Add(reader.GetString(1))
             Console.WriteLine(fields.Count & ":" & reader.GetString(0))
         End While
 
@@ -105,7 +107,7 @@ Module Module1
             SQL = "SELECT * FROM " & tables(menuChoice - 1) & " WHERE " & fieldCriteria & "@param;"
         End If
 
-        Console.WriteLine(SQL)
+        ' Console.WriteLine(SQL)
         con.Open()
         cmd.Connection = con
         cmd.CommandText = SQL
@@ -113,9 +115,19 @@ Module Module1
         cmd.Parameters.AddWithValue("@param", criteria)
 
         reader = cmd.ExecuteReader
+        For Each field In fields
+            Console.Write(field.PadRight(15))
+        Next
+        Console.WriteLine()
+
         While reader.Read
             For i = 0 To reader.FieldCount - 1
-                Console.Write(reader.GetString(i) & " ")
+                If DataTypes(i) = "date" Then
+                    Dim d As Date = reader.GetString(i)
+                    Console.Write(d.ToString("d").PadRight(15))
+                Else
+                    Console.Write(reader.GetString(i).PadRight(15))
+                End If
             Next
             Console.WriteLine()
         End While
@@ -177,7 +189,7 @@ Module Module1
         Dim reader As MySqlDataReader
         Dim SQL As String
         'Select the fields from the chosen table and add them to a list
-        SQL = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'agsTest_12BSoftware' AND TABLE_NAME=@Tname"
+        SQL = "SELECT COLUMN_NAME,DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'agsTest_12BSoftware' AND TABLE_NAME=@Tname"
         cmd.CommandText = SQL
         cmd.Connection = con
         cmd.Parameters.AddWithValue("@Tname", tables(menuChoice - 1))
@@ -189,9 +201,14 @@ Module Module1
         Dim cmd As New MySqlCommand
         Dim reader = getFieldNames(con, tables, menuChoice)
         Dim fields As New List(Of String)
-        While reader.Read
+        Dim DataTypes As New List(Of String)
+        While reader.Read()
             fields.Add(reader.GetString(0))
+            DataTypes.Add(reader.GetString(1))
+
         End While
+
+
         con.Close()
         Dim sql As String
 
@@ -219,9 +236,13 @@ Module Module1
         cmd.Parameters.Clear()
 
 
-        cmd.CommandText = SQL
+        cmd.CommandText = sql
         ' loop through parameters adding values from the value list
         For i = 0 To fields.Count - 1
+            If DataTypes(i) = "date" Then
+                Dim d As Date = values(i)
+                values(i) = d.ToString("s")
+            End If
             cmd.Parameters.AddWithValue("@param" & i, values(i))
         Next
 
