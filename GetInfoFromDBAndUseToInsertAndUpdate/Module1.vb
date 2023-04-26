@@ -1,6 +1,6 @@
-﻿Imports System.Runtime.Remoting.Contexts
+﻿
 Imports MySql.Data.MySqlClient
-Imports Mysqlx.XDevAPI.Relational
+
 
 Module Module1
 
@@ -91,8 +91,8 @@ Module Module1
         If fieldChoice <> 0 Then
 
             fieldCriteria = fields(fieldChoice - 1)
-            Console.Write("What comparison do you want (<,>,<=,>=,=,<>): ")
-            fieldCriteria &= Console.ReadLine
+
+            fieldCriteria &= getComparitor()
             Console.Write("What value do you want to filter by: ")
             criteria = Console.ReadLine
         End If
@@ -112,7 +112,6 @@ Module Module1
         ' cmd.Parameters.AddWithValue("@field", "NoOfLicences")
         cmd.Parameters.AddWithValue("@param", criteria)
 
-
         reader = cmd.ExecuteReader
         While reader.Read
             For i = 0 To reader.FieldCount - 1
@@ -122,6 +121,19 @@ Module Module1
         End While
         con.Close()
     End Sub
+    Function getComparitor() As String
+
+        Dim comparers = {"<", ">", "<=", ">=", "=", "!="}
+        For i = 0 To comparers.Length - 1
+            Console.WriteLine(i + 1 & " : " & comparers(i))
+        Next
+
+        Console.Write("Pick a comparitor: ")
+        Dim choice As Integer = Console.ReadLine()
+
+        Return comparers(choice - 1)
+
+    End Function
     Function menu() As Integer
         Console.WriteLine("DATABASE")
         Console.WriteLine("--------")
