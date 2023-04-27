@@ -14,7 +14,7 @@ Module Module1
             Console.Write("Which table do you want to use?: ")
             Dim tableChoice = Console.ReadLine()
             Dim menuChoice = menu()
-            Console.WriteLine(menuChoice)
+
             Select Case menuChoice
                 Case 1
                     viewData(con, tables, tableChoice)
@@ -24,10 +24,23 @@ Module Module1
                     updateData(con, tables, tableChoice)
             End Select
 
+            Console.Write("Press any key to continue")
+            Console.ReadLine()
+            Console.Clear()
 
         Loop
     End Sub
     Sub updateData(con As MySqlConnection, tables As List(Of String), menuChoice As Integer)
+        con.Open()
+        Dim reader2 = getFieldNames(con, tables, menuChoice)
+        Dim fields As New List(Of String)
+        Dim DataTypes As New List(Of String)
+        While reader2.Read()
+            fields.Add(reader2.GetString(0))
+            DataTypes.Add(reader2.GetString(1))
+
+        End While
+        con.Close()
         con.Open()
         Dim reader As MySqlDataReader
         Dim cmd As New MySqlCommand
@@ -36,12 +49,25 @@ Module Module1
         cmd.Connection = con
         reader = cmd.ExecuteReader
         Dim lopk As New List(Of String)
+
+        Console.Write("".PadRight(5))
+        For i = 0 To fields.Count - 1
+            Console.Write(fields(i).PadRight(15))
+        Next
+        Console.WriteLine()
+
         While reader.Read
 
             lopk.Add(reader.GetString(0))
-            Console.Write(lopk.Count & ": ")
+            Console.Write((lopk.Count & ": ").PadRight(5))
+
             For i = 0 To reader.FieldCount - 1
-                Console.Write(reader.GetString(i) & " ")
+                If DataTypes(i) = "date" Then
+                    Dim d As Date = reader.GetString(i)
+                    Console.Write(d.ToString("d").PadRight(15))
+                Else
+                    Console.Write(reader.GetString(i).PadRight(15))
+                End If
             Next
             Console.WriteLine()
         End While
@@ -50,12 +76,12 @@ Module Module1
         Dim recChoice As Integer = Console.ReadLine()
         Dim PK = lopk(recChoice - 1)
         con.Open()
-        reader = getFieldNames(con, tables, menuChoice)
-        Dim fields As New List(Of String)
-        While reader.Read()
-            fields.Add(reader.GetString(0))
-            Console.WriteLine(fields.Count & ":" & reader.GetString(0))
-        End While
+
+        For i = 0 To fields.Count - 1
+            Dim menuIndex As String = i + 1
+            Console.WriteLine(menuIndex.PadRight(5) & ": ".PadRight(5) & fields(i))
+        Next
+
 
         con.Close()
         Console.Write("Which filed do you want to update: ")
@@ -69,7 +95,7 @@ Module Module1
         cmd.CommandText = SQL
         cmd.Parameters.AddWithValue("@value", newVal)
         cmd.Parameters.AddWithValue("@val", PK)
-        Console.WriteLine(SQL)
+        ' Console.WriteLine(SQL)
         cmd.ExecuteNonQuery()
         con.Close()
 
@@ -180,7 +206,7 @@ Module Module1
         Console.Write("Enter database password: ")
         pwd = Console.ReadLine
         Console.Clear()
-        Dim con As New MySqlConnection("server=192.168.35.126;uid=agsTest;pwd=" & pwd & ";database=agsTest_12BSoftware")
+        Dim con As New MySqlConnection("server=192.168.35.165;uid=agsTest;pwd=" & pwd & ";database=agsTest_12BSoftware")
         Return con
 
     End Function
